@@ -46,8 +46,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
+        // Task 6: Handle Sensor Availability
         if (accelerometer == null) {
-            Toast.makeText(this, "Accelerometer not available", Toast.LENGTH_SHORT).show()
+            tvValues.text = "Accelerometer not available on this device."
+            ball.visibility = View.GONE
+            Toast.makeText(this, "Accelerometer not available", Toast.LENGTH_LONG).show()
         }
     }
 
