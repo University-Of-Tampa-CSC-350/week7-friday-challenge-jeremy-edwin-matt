@@ -25,7 +25,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var tvValues: TextView
 
     // Sensitivity factor to scale raw accelerometer values
-    private val sensitivity = 2.0f
+    // Adjusted for a responsive, real-time feel (Task 3 & 5)
+    private val sensitivity = 2.5f
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +53,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        // Using SENSOR_DELAY_GAME for high-frequency, real-time updates (Task 5)
         accelerometer?.let {
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
@@ -59,44 +61,51 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onPause() {
         super.onPause()
+        // Task 7: Lifecycle management
         sensorManager.unregisterListener(this)
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
         if (event?.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-            // X-axis: tilting left makes X positive, right makes X negative
-            // Y-axis: tilting forward (away) makes Y positive, backward (toward) makes Y negative
-            // Note: On Android, X is positive to the left, Y is positive downwards (if held upright)
-            // But usually we want: tilt right -> move right (positive X in screen coords)
-            // tilt down -> move down (positive Y in screen coords)
-            
+            // Raw accelerometer values
             val sensorX = event.values[0]
             val sensorY = event.values[1]
 
-            // Display raw values (Bonus)
-            tvValues.text = String.format("X: %.2f, Y: %.2f", sensorX, sensorY)
+            // Task 5: Real-Time Updates
+            // We update the UI every time the sensor reports a change.
+            // Using SENSOR_DELAY_GAME ensures minimal lag.
 
-            // Calculate new position
-            // We use -sensorX because tilting right (positive screen X) results in negative sensor X
-            // We use sensorY because tilting down (positive screen Y) results in positive sensor Y (when held upright)
-            // However, it depends on device orientation. For a simple implementation:
-            var newX = ball.x - (sensorX * sensitivity)
-            var newY = ball.y + (sensorY * sensitivity)
+            // Display values for debugging and "Room" info (Task 4 trail and error)
+            tvValues.text = String.format("X: %.2f, Y: %.2f\nRoom: %d x %d", 
+                sensorX, sensorY, container.width, container.height)
 
-            // Task 4: Maintain Screen Boundaries (Basic implementation)
-            // Boundary checks
-            if (newX < 0) newX = 0f
-            if (newX > container.width - ball.width) newX = (container.width - ball.width).toFloat()
-            
-            if (newY < 0) newY = 0f
-            if (newY > container.height - ball.height) newY = (container.height - ball.height).toFloat()
+            // Calculate movement delta
+            // Negate X because tilting right (negative sensorX) should move ball right (positive screenX)
+            val deltaX = -sensorX * sensitivity
+            val deltaY = sensorY * sensitivity
 
-            // Update position (Task 5: Real-Time Updates)
-            ball.x = newX
-            ball.y = newY
+            // New target positions
+            var nextX = ball.x + deltaX
+            var nextY = ball.y + deltaY
+
+            // Ensure container dimensions are available before clamping
+            if (container.width > 0 && container.height > 0) {
+                // Task 4: Maintain Screen Boundaries
+                val maxX = (container.width - ball.width).toFloat()
+                val maxY = (container.height - ball.height).toFloat()
+
+                // Clamp values to stay within the visible area
+                nextX = nextX.coerceIn(0f, maxX)
+                nextY = nextY.coerceIn(0f, maxY)
+
+                // Task 5: Apply position updates immediately to reflect live input
+                ball.x = nextX
+                ball.y = nextY
+            }
         }
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+        // Not needed for this implementation
     }
 }
